@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disk Scheduling Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Disk Scheduling Simulator</h2>
+
+        <label for="algorithm">Choose Algorithm:</label>
+        <select id="algorithm">
+            <option value="SSTF">SSTF</option>
+            <option value="SCAN">SCAN</option>
+            <option value="CLOOK">CLOOK</option>
+        </select>
+
+        <input type="text" id="requests" placeholder="Enter requests (comma-separated)">
+        <input type="number" id="head" placeholder="Initial head position">
+        <input type="number" id="size" placeholder="Disk size (for SCAN/CLOOK)">
+        <br>
+        <label for="direction">Head Movement Direction:</label>
+        <select id="direction">
+            <option value="1">High</option>
+            <option value="0">Low</option>
+        </select>
+
+        <button onclick="runAlgorithm()">Run</button>
+
+        <h3 id="result">Graphical Representation</h3>
+        <canvas id="graph" width="500" height="300"></canvas>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disk Scheduling Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px gray;
+        }
+        input, select, button {
+            margin: 10px;
+            padding: 8px;
+            width: 80%;
+        }
+        canvas {
+            margin-top: 20px;
+            border: 1px solid black;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Disk Scheduling Simulator</h2>
+        <label for="algorithm">Choose Algorithm:</label>
+        <select id="algorithm">
+            <option value="SSTF">SSTF</option>
+            <option value="SCAN">SCAN</option>
+            <option value="CLOOK">CLOOK</option>
+        </select>
+        <input type="text" id="requests" placeholder="Enter requests (comma-separated)">
+        <input type="number" id="head" placeholder="Initial head position">
+        <input type="number" id="size" placeholder="Disk size (for SCAN/CLOOK)">
+        <select id="direction">
+            <option value="1">High</option>
+            <option value="0">Low</option>
+        </select>
+        <button onclick="runAlgorithm()">Run</button>
+        <h3 id="result"></h3>
+        <canvas id="graph" width="500" height="300"></canvas>
+    </div>
+
+    <script>
+        function runAlgorithm() {
+            let algorithm = document.getElementById("algorithm").value;
+            let requests = document.getElementById("requests").value.split(',').map(Number);
+            let head = parseInt(document.getElementById("head").value);
+            let size = parseInt(document.getElementById("size").value);
+            let direction = parseInt(document.getElementById("direction").value);
+            
+            if (requests.includes(NaN) || isNaN(head)) {
+                alert("Please enter valid inputs.");
+                return;
+            }
+            
+            let totalMovement = 0;
+            let sequence = [];
+
+            if (algorithm === "SSTF") {
+                totalMovement = sstf(requests, head, sequence);
+            } else if (algorithm === "SCAN") {
+                totalMovement = scan(requests, head, size, direction, sequence);
+            } else if (algorithm === "CLOOK") {
+                totalMovement = clook(requests, head, direction, sequence);
+            }
+            
+            document.getElementById("result").innerText = "Total Head Movement: " + totalMovement;
+            drawGraph(sequence);
+        }
+
+        function sstf(requests, head, sequence) {
+            let totalMovement = 0;
+            let visited = new Array(requests.length).fill(false);
+            
+            for (let i = 0; i < requests.length; i++) {
+                let minDistance = Infinity, minIndex = -1;
+                for (let j = 0; j < requests.length; j++) {
+                    if (!visited[j] && Math.abs(requests[j] - head) < minDistance) {
+                        minDistance = Math.abs(requests[j] - head);
+                        minIndex = j;
+                    }
+                }
+                visited[minIndex] = true;
+                totalMovement += minDistance;
+                head = requests[minIndex];
+                sequence.push(head);
+            }
+            return totalMovement;
+        }
+
+        function scan(requests, head, size, direction, sequence) {
+            requests.push(0, size - 1);
+            requests.sort((a, b) => a - b);
+            let totalMovement = 0;
+            let index = requests.findIndex(req => req >= head);
+            
+            if (direction === 1) {
+                for (let i = index; i < requests.length; i++) {
+                    totalMovement += Math.abs(head - requests[i]);
+                    head = requests[i];
+                    sequence.push(head);
+                }
+                for (let i = index - 1; i >= 0; i--) {
+                    totalMovement += Math.abs(head - requests[i]);
+                    head = requests[i];
+                    sequence.push(head);
+                }
+            } else {
+                for (let i = index - 1; i >= 0; i--) {
+                    totalMovement += Math.abs(head - requests[i]);
+                    head = requests[i];
+                    sequence.push(head);
+                }
+                for (let i = index; i < requests.length; i++) {
+                    totalMovement += Math.abs(head - requests[i]);
+                    head = requests[i];
+                    sequence.push(head);
+                }
+            }
+            return totalMovement;
+        }
+
+        function clook(requests, head, direction, sequence) {
+            requests.sort((a, b) => a - b);
+            let totalMovement = 0;
+            let index = requests.findIndex(req => req >= head);
+            
+            if (direction === 1) {
+                for (let i = index; i < requests.length; i++) {
+                    totalMovement += Math.abs(head - requests[i]);
+                    head = requests[i];
+                    sequence.push(head);
+                }
+                for (let i = 0; i < index; i++) {
+                    totalMovement += Math.abs(head - requests[i]);
+                    head = requests[i];
+                    sequence.push(head);
+                }
+            } else {
+                for (let i = index - 1; i >= 0; i--) {
+                    totalMovement += Math.abs(head - requests[i]);
+                    head = requests[i];
+                    sequence.push(head);
+                }
+                for (let i = requests.length - 1; i >= index; i--) {
+                    totalMovement += Math.abs(head - requests[i]);
+                    head = requests[i];
+                    sequence.push(head);
+                }
+            }
+            return totalMovement;
+        }
+
+        function drawGraph(sequence) {
+            let canvas = document.getElementById("graph");
+            let ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.moveTo(50, 50);
+            sequence.forEach((pos, i) => {
+                ctx.lineTo(50 + i * 40, 50 + pos * 2);
+            });
+            ctx.stroke();
+        }
+    </script>
+</body>
+</html> -->
